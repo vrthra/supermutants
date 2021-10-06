@@ -1,5 +1,9 @@
 import csv, sys
 
+class O:
+    def log(*v):
+        print(*v)
+
 # Find functions that are reachable from fnA
 def find_reachable(call_g, fnA, reachable_keys=None, found_so_far=None):
     if reachable_keys is None: reachable_keys = {}
@@ -92,12 +96,38 @@ def identify_superlocations(matrix, locations, mutants):
 
     return my_locations
 
+def total_mutants(mutants):
+    m =  sum([len(mutants[loc]) for loc in mutants])
+    return m
+
+def generate_supermutants(matrix, mutants):
+    all_supermutants = []
+    while total_mutants(mutants):
+        superloc = identify_superlocations(matrix, keys, mutants)
+        assert superloc
+        # now choose one mutant per location
+        my_mutants = []
+        for loc in superloc:
+            m,*rest = mutants[loc]
+            mutants[loc] = rest
+            my_mutants.append((loc, m))
+        all_supermutants.append(my_mutants)
+        O.log('remaining mutants:', total_mutants(mutants), '/', TOTAL_MUTANTS)
+        O.log('supermutants:', len(all_supermutants))
+    return all_supermutants
+
+def print_matrix(matrix, keys):
+    print('\t' + ',\t'.join(keys))
+    for i,row in enumerate(matrix):
+        print(keys[i] + '\t' + ',\t'.join([str(c) for c in row]))
+
 def load_mutants(fname, locations):
     my_m = {}
     with open(fname) as f:
         lines = csv.DictReader(f)
         for line in lines:
             mID, fn = line['mutID'], line['fnName']
+            assert fn in locations, fn
             if fn not in  my_m: my_m[fn] = []
             my_m[fn].append(mID)
     for loc in locations:
@@ -120,34 +150,14 @@ def load_call_graph(fname):
         if b not in my_g: my_g[b] = []
     return my_g
 
-def generate_supermutants(matrix, mutants):
-    all_supermutants = []
-    while [loc for loc in mutants if mutants[loc]]:
-        superloc = identify_superlocations(matrix, keys, mutants)
-        # now choose one mutant per location
-        my_mutants = []
-        for loc in superloc:
-            m,*rest = mutants[loc]
-            mutants[loc] = rest
-            my_mutants.append((loc, m))
-        all_supermutants.append(my_mutants)
-    return all_supermutants
-
-def print_matrix(matrix, keys):
-    print('\t' + ',\t'.join(keys))
-    for i,row in enumerate(matrix):
-        print(keys[i] + '\t' + ',\t'.join([str(c) for c in row]))
-
 CALL_GRAPH = load_call_graph(sys.argv[1])
 MUTANTS = load_mutants(sys.argv[2], CALL_GRAPH.keys())
-
-#start = list(CALL_GRAPH.keys())[0]
-#reachability = reachable_dict(CALL_GRAPH)
-#for k in reachability:
-#    print(k, reachability[k])
+TOTAL_MUTANTS = total_mutants(MUTANTS)
 
 matrix, keys = reachability_matrix(CALL_GRAPH)
+O.log('computed reachability')
 # print_matrix(matrix, keys)
 supermutants = generate_supermutants(matrix, MUTANTS)
+O.log('generated supermutants')
 for m in supermutants:
     print(m)
