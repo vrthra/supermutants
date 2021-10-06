@@ -123,17 +123,20 @@ def print_matrix(matrix, keys):
 
 def load_mutants(fname, locations):
     my_m = {}
+    unknown_functions = []
     with open(fname) as f:
         lines = csv.DictReader(f)
         for line in lines:
             mID, fn = line['mutID'], line['fnName']
-            assert fn in locations, fn
+            if fn not in locations:
+                unknown_functions.append(fn)
+                continue
             if fn not in  my_m: my_m[fn] = []
             my_m[fn].append(mID)
     for loc in locations:
         if loc not in my_m:
             my_m[loc] = []
-    return my_m
+    return my_m, unknown_functions
 
 def load_call_graph(fname):
     my_g = {}
@@ -151,7 +154,8 @@ def load_call_graph(fname):
     return my_g
 
 CALL_GRAPH = load_call_graph(sys.argv[1])
-MUTANTS = load_mutants(sys.argv[2], CALL_GRAPH.keys())
+MUTANTS, unknown = load_mutants(sys.argv[2], CALL_GRAPH.keys())
+O.log('Unknown:', unknown)
 TOTAL_MUTANTS = total_mutants(MUTANTS)
 
 matrix, keys = reachability_matrix(CALL_GRAPH)
