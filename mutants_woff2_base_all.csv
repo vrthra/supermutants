@@ -1,4 +1,4 @@
-mutation_id,funname
+mutID,fnName
 0,BrotliCompareAndPushToQueueLiteral
 1,BrotliCompareAndPushToQueueLiteral
 2,BrotliCompareAndPushToQueueLiteral

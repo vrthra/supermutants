@@ -1,4 +1,4 @@
-mutation_id,funname
+mutID,fnName
 0,_Z9read_funcPvmmS_
 1,LLVMFuzzerTestOneInput
 2,LLVMFuzzerTestOneInput

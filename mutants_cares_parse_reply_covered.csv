@@ -1,4 +1,4 @@
-mutation_id,funname
+mutID,fnName
 106,ares_parse_naptr_reply
 107,ares_parse_naptr_reply
 108,ares_parse_naptr_reply

@@ -1,4 +1,4 @@
-mutation_id,funname
+mutID,fnName
 0,find_src_addr
 1,find_src_addr
 2,find_src_addr

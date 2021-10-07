@@ -1,4 +1,4 @@
-mutation_id,funname
+mutID,fnName
 302,default_malloc
 303,default_malloc
 1086,ares_create_query

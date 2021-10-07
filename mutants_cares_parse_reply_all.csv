@@ -1,4 +1,4 @@
-mutation_id,funname
+mutID,fnName
 0,ares_gethostbyaddr
 1,next_lookup
 2,next_lookup

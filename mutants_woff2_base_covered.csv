@@ -1,4 +1,4 @@
-mutation_id,funname
+mutID,fnName
 11,_ZN9__gnu_cxx13new_allocatorIPN5woff25TableEE8allocateEmPKv
 12,_ZN9__gnu_cxx13new_allocatorIPN5woff25TableEE8allocateEmPKv
 13,_ZN9__gnu_cxx13new_allocatorIPN5woff25TableEE8allocateEmPKv

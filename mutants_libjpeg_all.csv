@@ -1,4 +1,4 @@
-mutation_id,funname
+mutID,fnName
 0,tjGetErrorStr2
 1,tjGetErrorCode
 2,tjGetErrorCode
