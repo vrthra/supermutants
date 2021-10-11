@@ -1,8 +1,10 @@
 import csv, sys
+import numpy as np
+from collections import defaultdict
 
-class O:
-    def log(*v):
-        print(*v)
+# class O:
+#     def log(*v):
+#         print(*v)
 
 # Find functions that are reachable from fnA
 def find_reachable(call_g, fnA, reachable_keys=None, found_so_far=None):
@@ -45,100 +47,92 @@ def reachability_matrix(call_g):
     return matrix, columns
 
 
-# Insert the location information to matrix
-def insert_names(matrix, keys):
-    new_m = []
-    for i,row in enumerate(matrix):
-        new_r = []
-        for j,c in enumerate(row):
-            new_r.append((keys[j], c))
-        new_m.append((keys[i], new_r))
-    return new_m
+# # Insert the location information to matrix
+# def insert_names(matrix, keys):
+#     new_m = []
+#     for i,row in enumerate(matrix):
+#         new_r = []
+#         for j,c in enumerate(row):
+#             new_r.append((keys[j], c))
+#         new_m.append((keys[i], new_r))
+#     return new_m
 
-# Remove a single row corresponding to a location from matrix
-def remove_single_row(named_matrix, location):
-    return [(k, row) for k,row in named_matrix if k != location]
- 
-# Remove a single column corresponding to a location from matrix
-def remove_single_column(named_matrix, location):
-    return [(k, [(k1,c) for k1,c in row if k1 != location]) for k,row in named_matrix]
+# # Remove a single row corresponding to a location from matrix
+# def remove_single_row(named_matrix, location):
+#     return [(k, row) for k,row in named_matrix if k != location]
 
-# Remove a row and column corresponding to location
-def remove_row_column(named_matrix, loc):
-    m1 = remove_single_row(named_matrix, loc)
-    m2 = remove_single_column(m1, loc)
-    return m2
+# # Remove a single column corresponding to a location from matrix
+# def remove_single_column(named_matrix, location):
+#     return [(k, [(k1,c) for k1,c in row if k1 != location]) for k,row in named_matrix]
 
-import random
-def get_chosen_row(named_matrix, mutants):
-    remaining_loc = [(loc,row) for loc,row in named_matrix if mutants[loc]]
-    if remaining_loc:
-        loc,row = random.choice(remaining_loc)
-        return loc,row
-    return None, None
+# # Remove a row and column corresponding to location
+# def remove_row_column(named_matrix, loc):
+#     m1 = remove_single_row(named_matrix, loc)
+#     m2 = remove_single_column(m1, loc)
+#     return m2
 
-def identify_superlocations(matrix, locations, mutants):
-    named_matrix = insert_names(matrix, locations)
-    my_locations = []
-    while named_matrix:
-        loc, row = get_chosen_row(named_matrix, mutants)
-        if loc is None: break
-        my_locations.append(loc)
+# import random
+# def get_chosen_row(named_matrix, mutants):
+#     remaining_loc = [(loc,row) for loc,row in named_matrix if mutants[loc]]
+#     if remaining_loc:
+#         loc,row = random.choice(remaining_loc)
+#         return loc,row
+#     return None, None
 
-        m1 = remove_row_column(named_matrix, loc)
-        named_matrix = m1
+# def identify_superlocations(matrix, locations, mutants):
+#     named_matrix = insert_names(matrix, locations)
+#     my_locations = []
+#     while named_matrix:
+#         loc, row = get_chosen_row(named_matrix, mutants)
+#         if loc is None: break
+#         my_locations.append(loc)
 
-        # now find locations which are 1
-        reachable = [k1 for k1,c in row if c == 1]
-        for loc_ in reachable:
-            m1 = remove_row_column(named_matrix, loc_)
-            named_matrix = m1
+#         m1 = remove_row_column(named_matrix, loc)
+#         named_matrix = m1
 
-    return my_locations
+#         # now find locations which are 1
+#         reachable = [k1 for k1,c in row if c == 1]
+#         for loc_ in reachable:
+#             m1 = remove_row_column(named_matrix, loc_)
+#             named_matrix = m1
+
+#     return my_locations
 
 def total_mutants(mutants):
     m =  sum([len(mutants[loc]) for loc in mutants])
     return m
 
-def generate_supermutants(matrix, mutants):
-    all_supermutants = []
-    while total_mutants(mutants):
-        superloc = identify_superlocations(matrix, keys, mutants)
-        assert superloc
-        # now choose one mutant per location
-        my_mutants = []
-        for loc in superloc:
-            m,*rest = mutants[loc]
-            mutants[loc] = rest
-            my_mutants.append((loc, m))
-        all_supermutants.append(my_mutants)
-        O.log('remaining mutants:', total_mutants(mutants), '/', TOTAL_MUTANTS)
-        O.log('supermutants:', len(all_supermutants))
-    return all_supermutants
+# def generate_supermutants(matrix, mutants):
+#     all_supermutants = []
+#     while total_mutants(mutants):
+#         superloc = identify_superlocations(matrix, keys, mutants)
+#         assert superloc
+#         # now choose one mutant per location
+#         my_mutants = []
+#         for loc in superloc:
+#             m,*rest = mutants[loc]
+#             mutants[loc] = rest
+#             my_mutants.append((loc, m))
+#         all_supermutants.append(my_mutants)
+#         O.log('remaining mutants:', total_mutants(mutants), '/', TOTAL_MUTANTS)
+#         O.log('supermutants:', len(all_supermutants))
+#     return all_supermutants
 
 def print_matrix(matrix, keys):
     print('\t' + ',\t'.join(keys))
     for i,row in enumerate(matrix):
         print(keys[i] + '\t' + ',\t'.join([str(c) for c in row]))
 
-def load_mutants(fname, locations):
-    my_m = {}
-    unknown_functions = []
+def load_mutants(fname):
+    mutants = defaultdict(list)
     with open(fname) as f:
         lines = csv.DictReader(f)
         for line in lines:
             mID, fn = line['mutID'], line['fnName']
-            if fn not in locations:
-                unknown_functions.append(fn)
-                continue
-            if fn not in  my_m: my_m[fn] = []
-            my_m[fn].append(mID)
-    for loc in locations:
-        if loc not in my_m:
-            my_m[loc] = []
-    return my_m, unknown_functions
+            mutants[fn].append(mID)
+    return {**mutants}
 
-def load_call_graph(fname):
+def load_call_graph(fname, mutants):
     my_g = {}
     called = {}
     with open(fname) as f:
@@ -151,17 +145,63 @@ def load_call_graph(fname):
     # now, populate leaf functions
     for b in called:
         if b not in my_g: my_g[b] = []
+
+    unknown_funcs = [uf for uf in mutants.keys() if uf not in my_g]
+    # add unknown functions to callgraph
+    for uf in unknown_funcs:
+        my_g[uf] = []
+
+    # mark all unknown functions as reachable by all
+    for reachable in my_g.values():
+        reachable.extend(unknown_funcs)
     return my_g
 
-CALL_GRAPH = load_call_graph(sys.argv[1])
-MUTANTS, unknown = load_mutants(sys.argv[2], CALL_GRAPH.keys())
-O.log('Unknown:', unknown)
-TOTAL_MUTANTS = total_mutants(MUTANTS)
 
-matrix, keys = reachability_matrix(CALL_GRAPH)
-O.log('computed reachability')
-# print_matrix(matrix, keys)
-supermutants = generate_supermutants(matrix, MUTANTS)
-O.log('generated supermutants')
-for m in supermutants:
-    print(m)
+def pop_mutant(indices, mutants, matrix, keys, eligible):
+    chosen_idx = np.random.choice(indices[eligible])
+    chosen = keys[chosen_idx]
+    mut = int(mutants[str(chosen)].pop())
+    eligible &= np.invert(matrix[chosen_idx])
+    eligible &= np.invert(matrix[:, chosen_idx])
+    return mut, eligible
+
+def find_supermutants(matrix, keys, mutants):
+    indices = np.arange(len(matrix))
+    supermutants = []
+    while True:
+        available = np.array([bool(mutants.get(keys[ii])) for ii in range(len(matrix))])
+
+        if not np.any(available):
+            break
+
+        selected_mutants = []
+
+        while np.any(available):
+            mutant, available = pop_mutant(indices, mutants, matrix, keys, available)
+            selected_mutants.append(mutant)
+
+        supermutants.append(selected_mutants)
+    return supermutants
+
+mutants = load_mutants(sys.argv[2])
+
+callgraph = load_call_graph(sys.argv[1], mutants)
+
+total_mutants = total_mutants(mutants)
+print(total_mutants)
+
+matrix, keys = reachability_matrix(callgraph)
+matrix = np.array(matrix, dtype=bool)
+matrix = np.array(matrix, dtype=bool)
+keys = np.array(keys)
+print(len(callgraph), len(matrix), len(matrix[0]), len(keys))
+
+supermutants = find_supermutants(matrix, keys, mutants)
+print(len(supermutants), total_mutants, total_mutants / len(supermutants))
+
+# O.log('computed reachability')
+# # print_matrix(matrix, keys)
+# supermutants = generate_supermutants(matrix, MUTANTS)
+# O.log('generated supermutants')
+# for m in supermutants:
+#     print(m)
