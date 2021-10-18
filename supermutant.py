@@ -157,27 +157,47 @@ def load_call_graph(fname, mutants):
     return my_g
 
 
-def pop_mutant(indices, mutants, matrix, keys, eligible):
+def pop_mutant(mutants, eligible, has_mutants, indices, matrix, keys):
+    """
+    Get a single mutant id, choice is made from the eligible locations and the corresponding
+    index of has_mutants is set to false if no mutants are remaining for that location.
+    """
     chosen_idx = np.random.choice(indices[eligible])
     chosen = keys[chosen_idx]
-    mut = int(mutants[str(chosen)].pop())
+    possible_mutants = mutants[str(chosen)]
+    mut = int(possible_mutants.pop())
+    if len(possible_mutants) == 0:
+        has_mutants[chosen_idx] = False
+    # Remove locations reachable by the chosen location from the eligible list
     eligible &= np.invert(matrix[chosen_idx])
+    # Remove location that can reach the chosen location from the eligible list
     eligible &= np.invert(matrix[:, chosen_idx])
-    return mut, eligible
+    return mut
 
 def find_supermutants(matrix, keys, mutants):
     indices = np.arange(len(matrix))
+    # for each index a boolean value if there are any mutants remaining
+    has_mutants = np.array([bool(mutants.get(keys[ii])) for ii in range(len(matrix))])
+    # the selected supermutants each entry contains a list of mutants that are a supermutant
     supermutants = []
-    while True:
-        available = np.array([bool(mutants.get(keys[ii])) for ii in range(len(matrix))])
 
+    # while more supermutants can be created
+    while True:
+        # continue while there are more mutants remaining
+        available = np.array(has_mutants, copy=True)
         if not np.any(available):
             break
 
+        # mutants selected for the current supermutant
         selected_mutants = []
 
+        # while more mutants can be added to the supermutants
         while np.any(available):
-            mutant, available = pop_mutant(indices, mutants, matrix, keys, available)
+            mutant = pop_mutant(
+                # these arguments are changed in the called function
+                mutants, available, has_mutants,
+                # these are not
+                indices, matrix, keys)
             selected_mutants.append(mutant)
 
         supermutants.append(selected_mutants)
@@ -197,7 +217,7 @@ keys = np.array(keys)
 print(len(callgraph), len(matrix), len(matrix[0]), len(keys))
 
 supermutants = find_supermutants(matrix, keys, mutants)
-print(len(supermutants), total_mutants, total_mutants / len(supermutants))
+print(len(supermutants), total_mutants, sum((len(sm) for sm in supermutants)), total_mutants / len(supermutants))
 
 # O.log('computed reachability')
 # # print_matrix(matrix, keys)
